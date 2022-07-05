@@ -1,9 +1,8 @@
-#código do servidor LSD
 import socket
 from aposta import apostador, apostas
 from pathlib import Path
 
-HOST = '127.0.0.1'
+HOST = '0.0.0.0'
 PORT = 40000
 
 udp = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -16,13 +15,14 @@ numeros_apostados = []
 dinheiro = []
 nomes = []
 pontos = []
+clientes = []
 
-def cadastrar(dados):
-    sem_nome = 0
+def cadastrar(dados, cliente):
+    clientes.append(cliente)
     print(dados)
     info = dados.split(",")
     print(info)
-    usuario = apostador((info[0]), int(info[1]))
+    usuario = apostador((info[0]), int(info[1]), cliente)
     dinheiro.append(usuario.aposta)
     nomes.append(usuario.nome)
     numeros = [int(info[2]), int(info[3]), int(info[4]), int(info[5]), int(info[6])]
@@ -34,6 +34,7 @@ def cadastrar(dados):
     if usuario.nome in nomes:
         resposta = "OK LEONIDAS"
         udp.sendto(resposta.encode(), cliente)
+    print(clientes)
     
         
        
@@ -43,7 +44,7 @@ def jogar():
         jogo = apostas(apostador)
         ganha = jogo.SortearNumeros()
         resposta = (f'OK GUSTAVO, {ganha}')
-        udp.sendto(resposta.encode(), cliente)
+        #udp.sendto(resposta.encode(), cliente)
         num = 0 
         for c in range(len(numeros_apostados)):
             cont = 0
@@ -53,7 +54,7 @@ def jogar():
                         cont += 1
             num += 1    
             pontos.append(cont)
-        
+        exibir_resultado()
 
     else: 
         resposta =  ("ERROR DEBORA")
@@ -61,7 +62,7 @@ def jogar():
 
 
 
-def exibir_resultador():
+def exibir_resultado():
     premio = 0
 
     for i in range(len(dinheiro)):
@@ -77,10 +78,11 @@ def exibir_resultador():
             max_idx = idx
     if max_value > 0:
         resposta = (f'OK SAMUEL, {nomes[max_idx]}, {max_value},  {premio}')
-    udp.sendto(resposta.encode(), cliente)
     if max_value == 0:
         resposta = 'ERROR WAGNER'
-        udp.sendto(resposta.encode(), cliente)
+    for c in clientes:
+        udp.sendto(resposta.encode(), c)
+        print(resposta)
     
 
 def reset(): 
@@ -105,22 +107,15 @@ while True:
         game =  jogar()
     
     elif command == "SHOW":
-        results = exibir_resultador()
+        results = exibir_resultado()
 
     elif command == "RESET":
         resetar = reset()
 
     elif command == "DADOS":
-        cadastro = cadastrar(" ".join(tokens[1:]))
+        cadastro = cadastrar(" ".join(tokens[1:]), cliente)
     else:
        resposta =  "ERROR LOUISE"
-
-    # if command[0] == 'LERDIR':
-    #     caminho = comando_quebrado[1]
-    #     p = Path(caminho)
-    #     for arq in p.iterdir():
-    #         resposta += str(arq) + '\n'
-    
-    udp.sendto(resposta.encode(), cliente)
+       udp.sendto(resposta.encode(), cliente)
 
 udp.close()

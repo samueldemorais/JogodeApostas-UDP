@@ -1,122 +1,109 @@
 #Código do cliente LSD
 import socket
 from aposta import apostador, apostas
-from pathlib import Path
+import threading
 
-HOST = '0.0.0.0'
+
+def cadastrar(nome):
+
+    print (f'=========oi {nome}, bem vindo a MEGA-SENA LSD=========')
+    # A = input('qual o seu nome de apostador?')
+    # B = input("qual o valor da sua aposta?")
+    # C = input("Informe a 1° dezena:")
+    # D = input("Informe a 2° dezena:")
+    # E = input("Informe a 3° dezena:")
+    # F = input("Informe a 4° dezena:")
+    # G = input("Informe a 5° dezena:")
+    A = "KKK"
+    B = '100'
+    C = '22'
+    D = '23'
+    E = '24'
+    F = '25'
+    G = '26'
+    dados = "DADOS" + " " + A + "," + B + "," + C + "," + D + "," + E + "," + F + "," + G
+    udp.sendto(dados.encode(), servidor)
+    #msg_servidor, serv = udp.recvfrom(1024)
+    #print(msg_servidor.decode())
+        
+print('====== LISTA DE COMANDO ======= \nCAD   ---- Cadastrar novo usuário \nPLAY  ---- jogar na Mega-sena LSD \nSHOW  ---- Mostrar os resultados \nRESET ---- resetar jogo \nSAIR  ---- encerrar o programa')
+
+
+def recebimento():
+    while True:
+        print('Lendo:', udp.getsockname())
+        msg_servidor, servidor = udp.recvfrom(1024)
+        print('Recebi:', msg_servidor.decode())
+        mensagem_servidor = msg_servidor.decode().split(",")
+        print(mensagem_servidor[0])
+
+        if mensagem_servidor[0] == "ERROR DEBORA":
+            print("Não há apostadores suficentes")
+
+        if mensagem_servidor[0] == "ERROR LOUISE":
+            print("Comando digitado não é reconhecido")
+
+        if mensagem_servidor[0] == "ERROR WAGNER":
+            print("Pontuação Máxima foi 0 e não houve ganhador")
+
+        if mensagem_servidor[0] == "OK JUNIOR":
+            print("O jogo foi resetado com sucesso")
+
+        if mensagem_servidor[0] == "OK GUSTAVO":
+            print(f"Números sorteados: {mensagem_servidor[1:]}")
+
+        if mensagem_servidor[0] == "OK SAMUEL":
+            print("======RESULTADO=======")
+            print(f'ganhador:{mensagem_servidor[1]}')
+            print(f'pontuação:{mensagem_servidor[2]}')
+            print(f'prêmio total:{mensagem_servidor[3]}')
+
+        if mensagem_servidor[0] == "OK LEONIDAS":
+            print("Cadastro realizado com sucesso")
+
+def envio():
+    while True:
+        msg = input("LSD>>>")
+        mensagem = msg.split()
+        command = mensagem[0].upper()
+        if command == "CAD":
+            cadastrar(mensagem[1])
+        
+        else:
+            udp.sendto(msg.encode(), servidor)
+            # msg_servidor, servidor = udp.recvfrom(1024)
+            # mensagem_servidor = msg_servidor.decode().split(",")
+            # print(mensagem_servidor[0])
+            # if mensagem_servidor[0] == "ERROR DEBORA":
+            #     print("Não há apostadores suficentes")
+            # if mensagem_servidor[0] == "ERROR LOUISE":
+            #     print("Comando digitado não é reconhecido")
+            # if mensagem_servidor[0] == "ERROR WAGNER":
+            #     print("Pontuação Máxima foi 0 e não houve ganhador")
+            # if mensagem_servidor[0] == "OK JUNIOR":
+            #     print("O jogo foi resetado com sucesso")
+            # if mensagem_servidor[0] == "OK GUSTAVO":
+            #     print(f"Números sorteados: {mensagem_servidor[1:]}")
+            # if mensagem_servidor[0] == "OK SAMUEL":
+            #     print("======RESULTADO=======")
+            #     print(f'ganhador:{mensagem_servidor[1]}')
+            #     print(f'pontuação:{mensagem_servidor[2]}')
+            #     print(f'prêmio total:{mensagem_servidor[3]}')
+            # if mensagem_servidor[0] == "OK LEONIDAS":
+            #     print("Cadastro realizado com sucesso")
+
+# deixar dinâmico o ip            
+HOST = '127.0.0.1'
 PORT = 40000
 
+cliente = ("0.0.0.0", 0)
+servidor = (HOST, PORT)
+
 udp = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-orig = (HOST, PORT)
+udp.bind(cliente)
 
-udp.bind(orig)
+thread_recebimento = threading.Thread(target = recebimento)
+thread_recebimento.start()
+thread_envio = threading.Thread(target = envio)
+thread_envio.start()
 
-print('Servidor no ar...')
-numeros_apostados = []
-dinheiro = []
-nomes = []
-pontos = []
-clientes = []
-
-def cadastrar(dados, cliente):
-    clientes.append(cliente)
-    print(dados)
-    info = dados.split(",")
-    print(info)
-    usuario = apostador((info[0]), int(info[1]), cliente)
-    dinheiro.append(usuario.aposta)
-    nomes.append(usuario.nome)
-    numeros = [int(info[2]), int(info[3]), int(info[4]), int(info[5]), int(info[6])]
-    numeros_apostados.append(numeros)
-    print(numeros_apostados)    
-    print(dinheiro)
-    print(nomes)
-    print(pontos)
-    if usuario.nome in nomes:
-        resposta = "OK LEONIDAS"
-        udp.sendto(resposta.encode(), cliente)
-    print(clientes)
-    
-        
-       
-
-def jogar():
-    if len(nomes) >= 2:
-        jogo = apostas(apostador)
-        ganha = jogo.SortearNumeros()
-        resposta = (f'OK GUSTAVO, {ganha}')
-        #udp.sendto(resposta.encode(), cliente)
-        num = 0 
-        for c in range(len(numeros_apostados)):
-            cont = 0
-            for i in range(5):
-                for j in range(len(numeros_apostados[0])):
-                    if ganha[i] == numeros_apostados[num][j]:
-                        cont += 1
-            num += 1    
-            pontos.append(cont)
-        exibir_resultado()
-
-    else: 
-        resposta =  ("ERROR DEBORA")
-        udp.sendto(resposta.encode(), cliente)
-
-
-
-def exibir_resultado():
-    premio = 0
-
-    for i in range(len(dinheiro)):
-        premio += dinheiro[i]
-
-
-    max_value = None
-    max_idx = None
-
-    for idx, num in enumerate(pontos):
-        if (max_value is None or num > max_value):
-            max_value = num
-            max_idx = idx
-    if max_value > 0:
-        resposta = (f'OK SAMUEL, {nomes[max_idx]}, {max_value},  {premio}')
-    if max_value == 0:
-        resposta = 'ERROR WAGNER'
-    for c in clientes:
-        udp.sendto(resposta.encode(), c)
-        print(c, resposta)
-    
-
-def reset(): 
-    numeros_apostados.clear()
-    dinheiro.clear()
-    nomes.clear()
-    pontos.clear()
-    resposta = "OK JUNIOR"
-    udp.sendto(resposta.encode(), cliente)
-
-
-while True:
-    msg, cliente = udp.recvfrom(1024)
-    print('Recebi do cliente ', cliente, msg.decode())
-    resposta = ''
-    tokens = msg.decode().upper().split()
-    command = tokens[0]
-    if command == "SAIR":
-        break
-            
-    elif command == "PLAY":
-        game =  jogar()
-    
-    elif command == "SHOW":
-        results = exibir_resultado()
-
-    elif command == "RESET":
-        resetar = reset()
-
-    elif command == "DADOS":
-        cadastro = cadastrar(" ".join(tokens[1:]), cliente)
-    else:
-       resposta =  "ERROR LOUISE"
-       udp.sendto(resposta.encode(), cliente)
-
-udp.close()
